@@ -87,13 +87,17 @@ public class Graph
 		directionMap.put("--", 7);
 
 		pathMap = new HashMap<Integer, ArrayList<Object>>();
-		pathMap.put(0, new ArrayList<Object>(Arrays.asList(4, 1, 7)));
+		pathMap.put(-4, new ArrayList<Object>(Arrays.asList(6, 5, 7)));
+		pathMap.put(-3, new ArrayList<Object>(Arrays.asList(4, 3, 5)));
+		pathMap.put(-2, new ArrayList<Object>(Arrays.asList(2, 1, 3)));
+		pathMap.put(-1, new ArrayList<Object>(Arrays.asList(0, 1, 7)));
+		pathMap.put(0, new ArrayList<Object>(Arrays.asList(4)));
 		pathMap.put(1, new ArrayList<Object>(Arrays.asList(8)));
-		pathMap.put(2, new ArrayList<Object>(Arrays.asList(6, 1, 3)));
+		pathMap.put(2, new ArrayList<Object>(Arrays.asList(6)));
 		pathMap.put(3, new ArrayList<Object>(Arrays.asList(9)));
-		pathMap.put(4, new ArrayList<Object>(Arrays.asList(0, 3, 5)));
+		pathMap.put(4, new ArrayList<Object>(Arrays.asList(0)));
 		pathMap.put(5, new ArrayList<Object>(Arrays.asList(10)));
-		pathMap.put(6, new ArrayList<Object>(Arrays.asList(2, 5, 7)));
+		pathMap.put(6, new ArrayList<Object>(Arrays.asList(2)));
 		pathMap.put(7, new ArrayList<Object>(Arrays.asList(11)));
 		pathMap.put(8, new ArrayList<Object>(Arrays.asList(5, 14, 15)));
 		pathMap.put(9, new ArrayList<Object>(Arrays.asList(7, 12, 15)));

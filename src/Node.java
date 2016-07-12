@@ -164,7 +164,7 @@ public class Node
 					int y = (int) currentlvl.get(j).getY();
 					if (Graph.window.grid.get(y).get(x).data == null)
 					{
-						Object[] isLinkable = isLinkable(u, v, x, y);
+						Object[] isLinkable = isLinkable(u, v, x, y, l);
 						if ((boolean) isLinkable[0])
 						{
 							location = new Point(x, y);
@@ -182,7 +182,7 @@ public class Node
 		return null;
 	}
 
-	public static Object[] isLinkable(int u, int v, int x, int y)
+	public static Object[] isLinkable(int u, int v, int x, int y, int l)
 	{
 		Object[] info = new Object[2];
 
@@ -198,64 +198,119 @@ public class Node
 				direction += "0";
 
 		int[] currentBox = { u, v };
-		boolean entered = false;
 		Stack path = new Stack(), keyChain = new Stack();
 		int key = Graph.window.directionMap.get(direction);
+		if (key == 0)
+			key = -1;
+		else if (key == 2)
+			key = -2;
+		else if (key == 4)
+			key = -3;
+		else if (key == 6)
+			key = -4;
 		int prevKey = key;
 		int tempKey = 0;
-		ArrayList<Object> currentOptions = Graph.window.pathMap.get(key);
+		boolean enter = true;
+		int special = 0;
+		int specialData = 0;
+		int lineCount = 0;
+		ArrayList<Object> currentOptions = new ArrayList<>(Graph.window.pathMap.get(key));
 		while (true)
 		{
 			keyChain.push(new ArrayList<>(Arrays.asList(key)));
 
 			path.push(currentOptions);
 
-			if (key < 8)
+			if (key < 0)
 			{
-				if (!entered)
+				if (currentOptions.isEmpty())
 				{
-					entered = true;
+					info[0] = false;
+					info[1] = null;
+					return info;
+				}
+
+				prevKey = key;
+				key = (int) currentOptions.get(0);
+				currentOptions = new ArrayList<>(Graph.window.pathMap.get(key));
+			}
+			else if (key < 8)
+			{
+				int tt = 0;
+				if (!currentOptions.isEmpty())
+					tt = (int) currentOptions.get(0);
+				if ((currentBox[0] == x && currentBox[1] == y)
+						&& !Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[key])
+				{
 					Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[key] = true;
-					int[] dir = findDirection(key);
-					currentBox[0] += dir[0];
-					currentBox[1] += dir[1];
-					prevKey = key;
-					key = (int) currentOptions.get(0);
-					currentOptions = Graph.window.pathMap.get(key);
+					if (key == 0 || key == 2 || key == 4 || key == 6)
+					{
+						int tk;
+						if ((key / 2) + 12 + 2 < 16)
+							tk = (key / 2) + 12 + 2;
+						else
+							tk = (key / 2) + 12 - 2;
+						Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[(key / 2) + 12] = true;
+						int[] dir = findDirection(key);
+						dir[0] += currentBox[0];
+						dir[1] += currentBox[1];
+						Graph.window.grid.get(dir[1]).get(dir[0]).paths[tk] = true;
+					}
+					info[0] = true;
+					info[1] = keyChain;
+					return info;
+				}
+				else if (enter && (!Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[key]
+						|| !(tt == 0 || tt == 2 || tt == 4 || tt == 6)))
+				{
+					enter = false;
+
+					System.out.println((key == 0 || key == 2 || key == 4 || key == 6) + " "
+							+ Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[(key / 2) + 12]);
+
+					if (!((key == 0 || key == 2 || key == 4 || key == 6) && (tt == 0 || tt == 2 || tt == 4 || tt == 6)
+							&& Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[(key / 2) + 12]))
+					{
+						Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[key] = true;
+						if ((key == 0 || key == 2 || key == 4 || key == 6)
+								&& (tt == 0 || tt == 2 || tt == 4 || tt == 6))
+						{
+							int[] dir = findDirection(key);
+							currentBox[0] += dir[0];
+							currentBox[1] += dir[1];
+						}
+						prevKey = key;
+						key = (int) currentOptions.get(0);
+						currentOptions = new ArrayList<>(Graph.window.pathMap.get(key));
+					}
 				}
 				else
 				{
-					if (currentOptions.isEmpty())
+					path.pop();
+					keyChain.pop();
+					key = (int) keyChain.pop().get(0);
+					if (!keyChain.isEmpty())
 					{
-						info[0] = false;
-						info[1] = null;
-						return info;
+						prevKey = (int) keyChain.pop().get(0);
+						keyChain.push(new ArrayList<Object>(Arrays.asList(prevKey)));
 					}
-
-					if ((currentBox[0] == x && currentBox[1] == y)
-							&& !Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[key])
+					if (key < 0)
+						enter = true;
+					if (key >= 8 && key <= 11)
 					{
-						Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[key] = true;
-						info[0] = true;
-						info[1] = keyChain;
-						return info;
+						openPoint(currentBox, prevKey, key);
+						int tk;
+						if (key + 2 > 11)
+							tk = key - 2;
+						else
+							tk = key + 2;
+						int[] dir = findDirection(tk);
+						currentBox[0] += dir[0];
+						currentBox[1] += dir[1];
 					}
-					else
-					{
-						path.pop();
-						keyChain.pop();
-						key = (int) keyChain.pop().get(0);
-						if (!keyChain.isEmpty())
-						{
-							prevKey = (int) keyChain.pop().get(0);
-							keyChain.push(new ArrayList<Object>(Arrays.asList(prevKey)));
-						}
-						if (key >= 8 && key <= 11)
-							openPoint(currentBox, prevKey, key);
-						currentOptions = path.pop();
-						currentOptions.remove(0);
-						continue;
-					}
+					currentOptions = path.pop();
+					currentOptions.remove(0);
+					continue;
 				}
 			}
 			else if (key < 12)
@@ -275,69 +330,121 @@ public class Node
 					currentOptions.remove(0);
 					if (key < 8)
 						Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[key] = false;
-
-					int temp = key + 2;
-					if (temp > 11)
-						temp = 8;
-					currentBox = findDirection(temp);
 					continue;
 				}
 				else
 				{
-					currentBox = dir;
 					closePoint(currentBox, prevKey, key);
+					currentBox = dir;
 					prevKey = key;
 					key = (int) currentOptions.get(0);
-					currentOptions = Graph.window.pathMap.get(key);
+					if (key >= 12 && key <= 15)
+						tempKey = prevKey;
+					currentOptions = new ArrayList<>(Graph.window.pathMap.get(key));
 				}
 			}
 			else if (key < 16)
 			{
-				if (currentOptions.isEmpty())
+				int tk;
+				if (key + 2 < 16)
+					tk = key + 2;
+				else
+					tk = key - 2;
+				int[] dir = findDirection((key - 12) * 2);
+				dir[0] += currentBox[0];
+				dir[1] += currentBox[1];
+
+				if (lineCount == l - 1 || currentOptions.isEmpty()
+						|| Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[key]
+						|| Graph.window.grid.get(dir[1]).get(dir[0]).paths[tk])
 				{
 					path.pop();
 					keyChain.pop();
 					key = (int) keyChain.pop().get(0);
 					prevKey = (int) keyChain.pop().get(0);
 					if (key >= 8 && key <= 11)
+					{
 						openPoint(currentBox, prevKey, key);
+						int tl;
+						if (tempKey + 2 < 12)
+							tl = tempKey + 2;
+						else
+							tl = tempKey - 2;
+						int[] dir1 = findDirection(tl);
+						currentBox[0] += dir1[0];
+						currentBox[1] += dir1[1];
+					}
 					keyChain.push(new ArrayList<Object>(Arrays.asList(prevKey)));
 					currentOptions = path.pop();
 					currentOptions.remove(0);
+					continue;
 				}
 
-				for (int j = 0; j > currentOptions.size(); j++)
+				for (int j = 0; j < currentOptions.size(); j++)
 				{
 					String[] split = ((String) currentOptions.get(j)).split(">");
 					if (split[0].equals(Integer.toString(prevKey)))
 					{
-						keyChain.push(new ArrayList<>(Arrays.asList(currentOptions.get(j))));
+						currentOptions.remove(j == 0 ? 1 : 0);
 						split = split[1].split("&");
 						currentOptions = new ArrayList<>(
 								Arrays.asList(Integer.parseInt(split[0]), Integer.parseInt(split[1])));
 						Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[key] = true;
-						tempKey = prevKey;
+						Graph.window.grid.get(dir[1]).get(dir[0]).paths[tk] = true;
 						prevKey = key;
 						key = 16;
+						lineCount++;
 						break;
 					}
 				}
+
 			}
 			else
 			{
 				if (currentOptions.isEmpty())
 				{
+					if (special == 2)
+					{
+						if (specialData + 4 > 6)
+							specialData -= 4;
+						else
+							specialData += 4;
+						int[] dir1 = findDirection(specialData);
+						currentBox[0] += dir1[0];
+						currentBox[1] += dir1[1];
+					}
 					path.pop();
 					keyChain.pop();
 					key = (int) keyChain.pop().get(0);
 					prevKey = (int) keyChain.pop().get(0);
 					keyChain.push(new ArrayList<Object>(Arrays.asList(prevKey)));
 					Graph.window.grid.get(currentBox[1]).get(currentBox[0]).paths[key] = false;
+					int[] dir = findDirection((key - 12) * 2);
+					dir[0] += currentBox[0];
+					dir[1] += currentBox[1];
+					lineCount--;
+					int tk;
+					if (key + 2 < 16)
+						tk = key + 2;
+					else
+						tk = key - 2;
+					Graph.window.grid.get(dir[1]).get(dir[0]).paths[tk] = false;
 					currentOptions = path.pop();
 					currentOptions.remove(0);
 				}
 				else
 				{
+					if (special == 2)
+						special = 0;
+					special++;
+					if (special == 2)
+					{
+						specialData = (prevKey - 12) * 2;
+						int[] dir1 = findDirection(specialData);
+						currentBox[0] += dir1[0];
+						currentBox[1] += dir1[1];
+					}
+
 					if (tempKey == Graph.window.directionMap.get(direction))
 					{
 						key = tempKey;
@@ -347,7 +454,7 @@ public class Node
 						prevKey = key;
 						key = (Integer) currentOptions.get(0);
 					}
-					currentOptions = Graph.window.pathMap.get(key);
+					currentOptions = new ArrayList<>(Graph.window.pathMap.get(key));
 				}
 			}
 		}
@@ -356,26 +463,27 @@ public class Node
 	public static boolean isPointTaken(int[] currentBox, int prevKey, int key)
 	{
 		boolean output = true;
-		int[][] bools = new int[][] { findDirection(prevKey - 1), findDirection(prevKey),
-				findDirection(prevKey == 7 ? 0 : prevKey + 1), currentBox };
-		for (int i = 0; i < 3; i++)
-		{
-			bools[i][0] += currentBox[0];
-			bools[i][1] += currentBox[1];
-		}
 
 		int[] keys = new int[4];
 		keys[3] = key;
 		for (int i = 0; i < 3; i++)
 		{
-			if (key + i + 1 > 11)
+			if (key + 1 > 11)
 			{
 				key = 8;
 			}
 			else
-				key += (i + 1);
+				key++;
 
 			keys[i] = key;
+		}
+
+		int[][] bools = new int[][] { findDirection(keys[0]), findDirection(keys[1]), findDirection(keys[2]),
+				currentBox };
+		for (int i = 0; i < 3; i++)
+		{
+			bools[i][0] += currentBox[0];
+			bools[i][1] += currentBox[1];
 		}
 
 		for (int i = 0; i < 4; i++)
@@ -398,26 +506,26 @@ public class Node
 
 	public static void modPoint(int[] currentBox, int prevKey, int key, boolean change)
 	{
-		int[][] bools = new int[][] { findDirection(prevKey - 1), findDirection(prevKey),
-				findDirection(prevKey == 7 ? 0 : prevKey + 1), currentBox };
-		for (int i = 0; i < 3; i++)
-		{
-			bools[i][0] += currentBox[0];
-			bools[i][1] += currentBox[1];
-		}
-
 		int[] keys = new int[4];
 		keys[3] = key;
 		for (int i = 0; i < 3; i++)
 		{
-			if (key + i + 1 > 11)
+			if (key + 1 > 11)
 			{
 				key = 8;
 			}
 			else
-				key += (i + 1);
+				key++;
 
 			keys[i] = key;
+		}
+
+		int[][] bools = new int[][] { findDirection(keys[0]), findDirection(keys[1]), findDirection(keys[2]),
+				currentBox };
+		for (int i = 0; i < 3; i++)
+		{
+			bools[i][0] += currentBox[0];
+			bools[i][1] += currentBox[1];
 		}
 
 		for (int i = 0; i < 4; i++)
@@ -438,6 +546,7 @@ public class Node
 				break;
 
 			case 1:
+			case 8:
 				output[0] = 1;
 				output[1] = -1;
 				break;
@@ -448,6 +557,7 @@ public class Node
 				break;
 
 			case 3:
+			case 9:
 				output[0] = 1;
 				output[1] = 1;
 				break;
@@ -458,6 +568,7 @@ public class Node
 				break;
 
 			case 5:
+			case 10:
 				output[0] = -1;
 				output[1] = 1;
 				break;
@@ -468,6 +579,7 @@ public class Node
 				break;
 
 			case 7:
+			case 11:
 				output[0] = -1;
 				output[1] = -1;
 				break;
